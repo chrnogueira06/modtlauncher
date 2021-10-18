@@ -1,0 +1,41 @@
+apply plugin: 'base'
+
+ext.configFile = file "build.properties"
+configFile.withReader {
+    def prop = new Properties()
+    prop.load(it)
+    project.ext.config = new ConfigSlurper().parse prop
+}
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = "sponge"
+            url = "https://repo.spongepowered.org/maven"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'org.spongepowered:mixingradle:0.6-SNAPSHOT'
+    }
+}
+
+subprojects {
+    if (!project.name.toLowerCase().contains("forge") && !project.name.toLowerCase().contains("fabric"))
+        apply from: rootProject.file('common.gradle')
+}
+
+apply from: rootProject.file('BuildScripts/cos.gradle')
+apply from: rootProject.file('BuildScripts/version.gradle')
+
+task upload {
+    onlyIf { System.getenv("COS_SECRET_KEY") != null }
+    doLast {
+        uploadArtifacts(getShortVersion())
+    }
+}
